@@ -25,7 +25,8 @@ SCHEME = 'video_pre'
 
 
 # 输出路径
-DATE = datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S')
+#DATE = datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S')
+DATE = "2020-07-30_13.13.50"
 EXPORT_MAIN_DIRECTORY = "~/Desktop/ipa/" + SCHEME + DATE
 ARCHIVEPATH = EXPORT_MAIN_DIRECTORY + "/%s.xcarchive" %(SCHEME)
 IPAPATH = EXPORT_MAIN_DIRECTORY + "/%s.ipa" %(SCHEME)
@@ -45,32 +46,31 @@ REMARK = ""
 # 上传到AppConnect
 #def uploadIpaToAppStore():
 #
-#	print "iPA上传中...."
-#	altoolPath = "/Applications/Xcode.app/Contents/Applications/Application\ Loader.app/Contents/Frameworks/ITunesSoftwareService.framework/Versions/A/Support/altool"
+#    print "iPA上传中...."
+#    altoolPath = "/Applications/Xcode.app/Contents/Applications/Application\ Loader.app/Contents/Frameworks/ITunesSoftwareService.framework/Versions/A/Support/altool"
 #
-#	exportCmd = "%s --validate-app -f %s -u %s -p %s -t ios --output-format xml" % (altoolPath, IPAPATH, APPLEID,APPLEPWD)
-#	process = subprocess.Popen(exportCmd, shell=True)
-#	(stdoutdata, stderrdata) = process.communicate()
+#    exportCmd = "%s --validate-app -f %s -u %s -p %s -t ios --output-format xml" % (altoolPath, IPAPATH, APPLEID,APPLEPWD)
+#    process = subprocess.Popen(exportCmd, shell=True)
+#    (stdoutdata, stderrdata) = process.communicate()
 #
-#	validateResult = process.returncode
-#	if validateResult == 0:
-#		print '~~~~~~~~~~~~~~~~iPA验证通过~~~~~~~~~~~~~~~~'
-#		exportCmd = "%s --upload-app -f %s -u %s -p %s -t ios --output-format normal" % (
-#		altoolPath, IPAPATH, APPLEID, APPLEPWD)
-#		process = subprocess.Popen(exportCmd, shell=True)
-#		(stdoutdata, stderrdata) = process.communicate()
+#    validateResult = process.returncode
+#    if validateResult == 0:
+#        print '~~~~~~~~~~~~~~~~iPA验证通过~~~~~~~~~~~~~~~~'
+#        exportCmd = "%s --upload-app -f %s -u %s -p %s -t ios --output-format normal" % (
+#        altoolPath, IPAPATH, APPLEID, APPLEPWD)
+#        process = subprocess.Popen(exportCmd, shell=True)
+#        (stdoutdata, stderrdata) = process.communicate()
 #
-#		uploadresult = process.returncode
-#		if uploadresult == 0:
-#			print '~~~~~~~~~~~~~~~~iPA上传成功'
-#		else:
-#			print '~~~~~~~~~~~~~~~~iPA上传失败'
-#	else:
-#		print "~~~~~~~~~~~~~~~~iPA验证失败~~~~~~~~~~~~~~~~"
+#        uploadresult = process.returncode
+#        if uploadresult == 0:
+#            print '~~~~~~~~~~~~~~~~iPA上传成功'
+#        else:
+#            print '~~~~~~~~~~~~~~~~iPA上传失败'
+#    else:
+#        print "~~~~~~~~~~~~~~~~iPA验证失败~~~~~~~~~~~~~~~~"
 
 def parserUploadResult(jsonResult):
-    print "上传蒲公英成功"
-    
+
     ipaPath = os.path.expanduser(IPAPATH)
     ipaPath = unicode(ipaPath, "utf-8")
     version = analyze_ipa_with_plistlib(ipaPath)
@@ -81,33 +81,38 @@ def parserUploadResult(jsonResult):
     payload = {
         "msgtype": "link",
         "link": {
-            "title": SCHEME + " 已更新至 " + version + "csxc",
+            "title": SCHEME + " 已更新至 " + version + " csxc",
             "text": REMARK,
             "messageUrl": downUrl
         }
     }
+    
+    print payload
+    print REMARK
+    
     s = json.dumps(payload)
     r = requests.post("https://oapi.dingtalk.com/robot/send?access_token=fde00de18ee2b0a84dc27b99da26bf099aa2091f9e9687106f65d33d6475d282", data = s,headers = headers)
-        
-    
+
+
     if r.status_code == requests.codes.ok:
         print "通知成功"
 
 
 # 上传蒲公英
 def uploadIpaToPgyer():
-	ipaPath = os.path.expanduser(IPAPATH)
-	ipaPath = unicode(ipaPath, "utf-8")
-	files = {'file': open(ipaPath, 'rb')}
-	headers = {'enctype':'multipart/form-data'}
-	payload = {'uKey':USER_KEY,'_api_key':API_KEY,'updateDescription':REMARK}
-	print "uploading...."
-	r = requests.post(PGYER_UPLOAD_URL, data = payload ,files=files,headers=headers)
-	if r.status_code == requests.codes.ok:
-		result = r.json()
-		parserUploadResult(result)
-	else:
-		print 'HTTPError,Code:'+r.status_code
+    ipaPath = os.path.expanduser(IPAPATH)
+    ipaPath = unicode(ipaPath, "utf-8")
+    files = {'file': open(ipaPath, 'rb')}
+    headers = {'enctype':'multipart/form-data'}
+    payload = {'uKey':USER_KEY,'_api_key':API_KEY,'updateDescription':REMARK}
+    print "uploading...."
+    r = requests.post(PGYER_UPLOAD_URL, data = payload ,files=files,headers=headers)
+    if r.status_code == requests.codes.ok:
+        result = r.json()
+        print "上传蒲公英成功"
+        parserUploadResult(result)
+    else:
+        print 'HTTPError,Code:'+r.status_code
 
 
 
@@ -192,6 +197,7 @@ def main():
     options = parser.parse_args()
 
     if options.r:
+        global REMARK
         REMARK = options.r
         autoPackage()
     else:
@@ -200,3 +206,4 @@ def main():
     
 if __name__ == '__main__':
     main()
+
