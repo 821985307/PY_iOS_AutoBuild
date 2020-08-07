@@ -15,18 +15,18 @@ import zipfile, biplist, sys, re
 
 
 # 打包配置
-CONFIGURATION = "Release"
-EXPORT_OPTIONS_PLIST = "/Users/wzz/Desktop/Git/ios_movie_searcher_dev_wzz/exportOptions.plist"
-WORKSPACE = "/Users/wzz/Desktop/Git/ios_movie_searcher_dev_wzz/video.xcworkspace"
-PLIST_PATH = "/Users/wzz/Desktop/Git/ios_movie_searcher_dev_wzz/video/Others/Info.plist"
+CONFIGURATION = "VideoPre"
+EXPORT_OPTIONS_PLIST = "/Users/wzz/Desktop/Git/PY_iOS_AutoBuild/exportOptions.plist"
+WORKSPACE = "/Users/wzz/Desktop/Git/ios_movie_searcher/video.xcworkspace"
+PLIST_PATH = "/Users/wzz/Desktop/Git/ios_movie_searcher/video/Others/Info.plist"
 TARGET = 'video'
 SCHEME = 'video_pre'
 
 
 
 # 输出路径
-#DATE = datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S')
-DATE = "2020-07-30_13.13.50"
+DATE = datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S')
+#DATE = "2020-07-30_13.13.50"
 EXPORT_MAIN_DIRECTORY = "~/Desktop/ipa/" + SCHEME + DATE
 ARCHIVEPATH = EXPORT_MAIN_DIRECTORY + "/%s.xcarchive" %(SCHEME)
 IPAPATH = EXPORT_MAIN_DIRECTORY + "/%s.ipa" %(SCHEME)
@@ -41,6 +41,8 @@ API_KEY = "68c801c712051ecfe705e5c843b1b738"
 REMARK = ""
 
 
+#钉钉上报
+ACCESS_TOKEN = "fde00de18ee2b0a84dc27b99da26bf099aa2091f9e9687106f65d33d6475d282"
 
 
 # 上传到AppConnect
@@ -91,29 +93,11 @@ def parserUploadResult(jsonResult):
     print REMARK
     
     s = json.dumps(payload)
-    r = requests.post("https://oapi.dingtalk.com/robot/send?access_token=fde00de18ee2b0a84dc27b99da26bf099aa2091f9e9687106f65d33d6475d282", data = s,headers = headers)
+    r = requests.post("https://oapi.dingtalk.com/robot/send?access_token=" + ACCESS_TOKEN, data = s,headers = headers)
 
 
     if r.status_code == requests.codes.ok:
         print "通知成功"
-
-
-# 上传蒲公英
-def uploadIpaToPgyer():
-    ipaPath = os.path.expanduser(IPAPATH)
-    ipaPath = unicode(ipaPath, "utf-8")
-    files = {'file': open(ipaPath, 'rb')}
-    headers = {'enctype':'multipart/form-data'}
-    payload = {'uKey':USER_KEY,'_api_key':API_KEY,'updateDescription':REMARK}
-    print "uploading...."
-    r = requests.post(PGYER_UPLOAD_URL, data = payload ,files=files,headers=headers)
-    if r.status_code == requests.codes.ok:
-        result = r.json()
-        print "上传蒲公英成功"
-        parserUploadResult(result)
-    else:
-        print 'HTTPError,Code:'+r.status_code
-
 
 
 
@@ -136,6 +120,24 @@ def find_plist_path(zip_file):
          m = pattern.match(path)
          if m is not None:
              return m.group()
+
+# 上传蒲公英
+def uploadIpaToPgyer():
+    ipaPath = os.path.expanduser(IPAPATH)
+    ipaPath = unicode(ipaPath, "utf-8")
+    files = {'file': open(ipaPath, 'rb')}
+    headers = {'enctype':'multipart/form-data'}
+    payload = {'uKey':USER_KEY,'_api_key':API_KEY,'updateDescription':REMARK}
+    print "uploading...."
+    r = requests.post(PGYER_UPLOAD_URL, data = payload ,files=files,headers=headers)
+    if r.status_code == requests.codes.ok:
+        result = r.json()
+        print "上传蒲公英成功"
+        parserUploadResult(result)
+    else:
+        print 'HTTPError,Code:'+r.status_code
+
+
 
 
 # 自动化打包
@@ -167,7 +169,7 @@ def xcbuild():
         # 判断打包结果 如果打包失败 删除ARCHIVE相关的内容
         archiveReturnCode = process.returncode
         if archiveReturnCode != 0:
-            print "archive project %s failed" %(project)
+            print "archive project %s failed" %(WORKSPACE)
             cleanCmd = "rm -r %s" %(ARCHIVEPATH)
             process = subprocess.Popen(cleanCmd, shell = True)
             process.wait()
@@ -206,4 +208,5 @@ def main():
     
 if __name__ == '__main__':
     main()
+
 
